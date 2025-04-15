@@ -1,0 +1,88 @@
+import { CVModel, ICV } from './cv.model';
+import {CreateCVDTO } from '../cvs/cv.dto';
+import {AppError} from '../../utils/appError';
+import { Response } from "express";
+
+import { v4 as uuidv4 } from 'uuid';
+import { PDFService } from '../../utils/services/PDFService';
+const { ATSAnalysisService } = require('../../utils/services/cvAnalysis');
+
+import { GroqService } from '../../utils/services/grok.service';
+const groqService = new GroqService();
+
+const pdfService = new PDFService();
+const atsAnalysisService = new ATSAnalysisService(groqService);
+
+export class CvService {
+  
+
+  async create(cvDto: CreateCVDTO, res: Response) {
+    const newCv = await CVModel.create({
+      ...cvDto,
+    });    
+    if (!newCv) {
+      throw new AppError("Cv not created", 404);
+    }
+    return newCv;
+  }
+
+    async getAllMyCvs(email: string) {
+        const cvs = await CVModel.find({ email });
+        return cvs;
+    }
+
+
+    // get cv by id
+    async getCvById(id: string) {
+        const cv = await CVModel.findById(id);
+        return cv;
+    }
+
+    // update cv by id
+    async updateCvById(id: string, cvDto: CreateCVDTO) {
+        const updatedCv = await CVModel.findByIdAndUpdate(id
+            , cvDto
+            , { new: true });
+        return updatedCv;
+    }
+
+    // delete cv by id
+    async deleteCvById(id: string) {
+        const deletedCv = await CVModel.findByIdAndDelete(id);
+        return deletedCv;
+    }
+
+    
+    async uploadCv (filePath: string) {
+        
+            const text = await pdfService.extractText(filePath);
+            console.log(text);
+            const resumeId = uuidv4();
+        
+            // Cleanup the uploaded file after processing
+            await pdfService.cleanup(filePath);
+        
+            const analysis = await atsAnalysisService.analyze(text);
+            console.log("---------------------------------------------------------------------")
+            console.log(analysis);
+            // cast it to json 
+            return JSON.stringify(analysis);
+    }
+
+
+    async getCareerRecommendation(cv: ICV) {
+      console.log("11");
+        const analysis = await atsAnalysisService.getCareerRecommendation(cv);
+        console.log("22");
+        return analysis;
+    }
+
+    async getCareerPath(cv: ICV, desiredCareer: string) {
+        const analysis = await atsAnalysisService.getCareerPath(cv, desiredCareer);
+        return analysis;
+    }
+
+
+
+
+}
