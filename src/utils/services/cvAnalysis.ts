@@ -140,7 +140,6 @@ export class ATSAnalysisService {
   }
 
   async getCareerRecommendation(cv: any): Promise<any> {
-    console.log("22");
     const prompt = `You are an expert in career counseling.
   
     Analyze the following structured CV and provide career recommendations based on the candidate's skills and experience:
@@ -194,7 +193,6 @@ export class ATSAnalysisService {
     }
   
   }
-
 
   async getCareerPath(cv: any, desiredCareer: string): Promise<any> {
     const prompt = `You are an expert in career counseling.
@@ -272,5 +270,6 @@ export class ATSAnalysisService {
       throw new Error("Invalid JSON format from AI.");
     }
   }
+  
   
 }

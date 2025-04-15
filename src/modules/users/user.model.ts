@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { CVModel, ICV } from 'modules/cvs/cv.model';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
 import crypto from 'crypto';
@@ -11,9 +10,6 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   passwordConfirm?: string;
-  phone: string;
-  country: string;
-  phoneCode: string;
   photo?: string;
   role: 'user' | 'admin';
   isVerified: boolean;
@@ -59,31 +55,6 @@ const UserSchema = new Schema<IUser>(
         return !this.provider; // Only required if not using Google/Facebook
       },
       select: false,
-    },
-    phone: {
-      type: String,
-      required: function (this: IUser) {
-        return !this.provider; // Only required if not using Google/Facebook
-      },
-      default: '1234567890',
-    },
-    country: {
-      type: String,
-      required: function (this: IUser) {
-        return !this.provider;
-      },
-      default: 'US',
-    },
-    phoneCode: {
-      type: String,
-      required: function (this: IUser) {
-        return !this.provider;
-      },
-      default: '+1',
-    },    
-    photo: {
-      type: String,
-      default: 'default.jpg',
     },
     role: {
       type: String,

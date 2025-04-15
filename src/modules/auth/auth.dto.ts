@@ -15,17 +15,6 @@ export class SignupDto {
   @IsNotEmpty({ message: "Password confirmation is required" })
   @ValidateIf((o) => o.password === o.passwordConfirm, { message: "Passwords do not match" })
     passwordConfirm!: string;
-
-  @IsNotEmpty({ message: "Country is required" })
-    country!: string;
-
-  @IsNotEmpty({ message: "Phone number is required" })
-    @Matches(/^[0-9]+$/, { message: "Phone number must be numeric" })
-    phone!: string;
-
-  @IsNotEmpty({ message: "Phone code is required" })
-    @Matches(/^\+\d{1,4}$/, { message: "Invalid phone code format (e.g., +1, +44)" })
-    phoneCode!: string;
 }
 
 export class LoginDto {
