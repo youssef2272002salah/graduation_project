@@ -6,7 +6,7 @@ import crypto from 'crypto';
 // Define TypeScript interface for the User document
 export interface IUser extends Document {
   _id: string;
-  fullname: string;
+  username: string;
   email: string;
   password?: string;
   passwordConfirm?: string;
@@ -38,7 +38,7 @@ const UserSchema = new Schema<IUser>(
       enum: ['google', 'facebook'],
       sparse: true
     },
-    fullname: {
+    username: {
       type: String,
       required: [true, 'Please add a name'],
     },

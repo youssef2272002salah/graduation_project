@@ -2,7 +2,7 @@ import { IsEmail, IsNotEmpty, MinLength, Matches, ValidateIf } from "class-valid
 
 export class SignupDto {
   @IsNotEmpty({ message: "Full name is required" })
-  fullname!: string;
+  username!: string;
 
   @IsNotEmpty({ message: "Email is required" })
   @IsEmail({}, { message: "Invalid email address" })

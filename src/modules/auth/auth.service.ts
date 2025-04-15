@@ -11,7 +11,7 @@ export class AuthService {
 
 
  createSendToken(user: IUser, res: Response) {
-    const token = this.signToken(user._id.toString(), user.fullname);
+    const token = this.signToken(user._id.toString(), user.username);
 
     // Set cookie options
     const cookieOptions = {
@@ -29,7 +29,7 @@ return res.status(200).json({
         token,
         user: {
             id: user._id,
-            fullname: user.fullname,
+            username: user.username,
             email: user.email,
             role: user.role,
         },
@@ -37,9 +37,9 @@ return res.status(200).json({
 }
 
 
-     signToken(id: string,fullname: string): string {
+     signToken(id: string,username: string): string {
       console.log("Signing JWT with secret:", process.env.JWT_SECRET);
-      return jwt.sign({ id, fullname }, process.env.JWT_SECRET || "default_secret", {
+      return jwt.sign({ id, username }, process.env.JWT_SECRET || "default_secret", {
         expiresIn: parseInt(process.env.JWT_EXPIRES_IN as string, 10000) || "100000d", 
       });
     }

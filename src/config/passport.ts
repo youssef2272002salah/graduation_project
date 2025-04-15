@@ -12,12 +12,12 @@ const authCallback = async (accessToken: string, refreshToken: string, profile: 
       console.log("Facebook Profile:", profile); // ✅ Debugging
   
       const email = profile.emails?.[0]?.value;
-      const fullname =
+      const username =
         profile.displayName || // ✅ Use displayName if available
         `${profile.name?.givenName || ""} ${profile.name?.familyName || ""}`.trim() || // ✅ Try given & family name
         "Anonymous User"; // ✅ Fallback
   
-      if (!fullname.trim()) {
+      if (!username.trim()) {
         return done(null, false, { message: "Please add a name" });
       }
   
@@ -25,7 +25,7 @@ const authCallback = async (accessToken: string, refreshToken: string, profile: 
   
       if (!user) {
         user = await UserModel.create({
-          fullname,
+          username,
           email,
           providerId: profile.id,
           provider: profile.provider,

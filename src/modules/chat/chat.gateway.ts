@@ -5,7 +5,7 @@ import { ChatService } from './chat.service';
 // Define User Interface
 interface UserPayload {
   id: string;
-  fullname: string;
+  username: string;
 }
 
 interface AuthenticatedSocket extends Socket {
@@ -36,7 +36,7 @@ export class ChatGateway {
           return next(new Error('Authentication error: JWT_SECRET is missing'));
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
-        console.log(`🔑 User authenticated: ${decoded.fullname}`);
+        console.log(`🔑 User authenticated: ${decoded.username}`);
         socket.user = decoded;
         next();
       } catch (error) {
@@ -48,7 +48,7 @@ export class ChatGateway {
   // WebSocket Event Listeners
   private setupListeners() {
     this.io.on('connection', (socket: AuthenticatedSocket) => {
-      console.log(`🔌 User connected: ${socket.user?.fullname || 'Unknown'}`);
+      console.log(`🔌 User connected: ${socket.user?.username || 'Unknown'}`);
 
       socket.on('joinRoom', ({ room }) => {
         socket.join(room);
@@ -70,7 +70,7 @@ export class ChatGateway {
       });
 
       socket.on('disconnect', () => {
-        console.log(`❌ User disconnected: ${socket.user?.fullname || 'Unknown'}`);
+        console.log(`❌ User disconnected: ${socket.user?.username || 'Unknown'}`);
       });
     });
   }
