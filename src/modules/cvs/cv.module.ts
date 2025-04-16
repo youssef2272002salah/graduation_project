@@ -22,5 +22,8 @@ cvRouter.get("/:id", protect, cvController.getCvById);
 cvRouter.delete("/:id", protect, cvController.deleteCvById);
 cvRouter.put("/:id", protect, cvController.updateCvById);
 
+cvRouter.post("/atsAnalysis/:id", protect, cvController.atsAnalysis);
+cvRouter.post("/getJobs", protect, cvController.getJobs);
+
 
 export { cvRouter };

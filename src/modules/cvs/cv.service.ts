@@ -5,13 +5,18 @@ import { Response } from "express";
 
 import { v4 as uuidv4 } from 'uuid';
 import { PDFService } from '../../utils/services/PDFService';
-const { ATSAnalysisService } = require('../../utils/services/cvAnalysis');
-
 import { GroqService } from '../../utils/services/grok.service';
+
+const { ATSAnalysisService } = require('../../utils/services/cvAnalysis');
+const { JoobleService } = require('../../utils/services/jooble');
+
+
 const groqService = new GroqService();
+const joobleService = new JoobleService();
 
 const pdfService = new PDFService();
 const atsAnalysisService = new ATSAnalysisService(groqService);
+
 
 export class CvService {
   
@@ -71,9 +76,7 @@ export class CvService {
 
 
     async getCareerRecommendation(cv: ICV) {
-      console.log("11");
         const analysis = await atsAnalysisService.getCareerRecommendation(cv);
-        console.log("22");
         return analysis;
     }
 
@@ -81,6 +84,18 @@ export class CvService {
         const analysis = await atsAnalysisService.getCareerPath(cv, desiredCareer);
         return analysis;
     }
+
+    async atsAnalysis(cv: ICV) {
+        const analysis = await atsAnalysisService.atsAnalysis(cv);
+        return analysis;
+    }
+
+    async getJobs(track: string, location: string) {
+        const analysis = await joobleService.getJobs(track, location);
+        return analysis;
+    }
+
+
 
 
 

@@ -138,5 +138,30 @@ export class CvController {
   });
 
 
+  atsAnalysis = expressAsyncHandler(async (req: Request, res: Response) => {
+    const cv = await cvService.getCvById(req.params.id);
+    if (!cv) {
+      throw new AppError("Cv not found", 404);
+    }
+    const analysis = await cvService.atsAnalysis(cv);
+    res.status(200).json({
+      status: "success",
+      data: analysis,
+    });
+  });
+
+  getJobs = expressAsyncHandler(async (req: Request, res: Response) => {
+    const track = req.body.track;
+    const location = req.body.location;
+    if (!track || !location) {
+      throw new AppError("Please provide track and location", 400);
+    }
+    const jobs = await cvService.getJobs(track, location);
+    res.status(200).json({
+      status: "success",
+      data: jobs,
+    });
+  });
+
   
 }

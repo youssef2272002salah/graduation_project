@@ -270,6 +270,56 @@ export class ATSAnalysisService {
       throw new Error("Invalid JSON format from AI.");
     }
   }
+
+  async atsAnalysis  (cv: any): Promise<any> {
+    const prompt = `You are an expert in resume analysis.
+    
+    Analyze the following structured CV and provide an ATS analysis based on the candidate's skills and experience.
+  
+    Structured CV:
+    ${JSON.stringify(cv)}
+    
+    IMPORTANT: Return the ATS analysis in the following JSON format, WITHOUT ANY ADDITIONAL TEXT:
+  
+    {
+      "score": number (0-100),
+      "analysis": [
+        {
+          "category": "Category Name",
+          "score": number (0-100),
+          "recommendation": "Recommendation for improvement"
+        },
+        {
+          "category": "Category Name",
+          "score": number (0-100),
+          "recommendation": "Recommendation for improvement"
+        },
+        {
+          "category": "Category Name",
+          "score": number (0-100),
+          "recommendation": "Recommendation for improvement"
+        }
+      ]
+    }`;
+
+    const completion = await this.groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.3
+    });
+
+    const rawContent = completion.choices[0]?.message?.content || "";
+    const cleaned = rawContent.replace(/```(json)?/g, "").trim();
+
+  
+    try {
+      return JSON.parse(cleaned);
+    } catch (error) {
+      console.error("Failed to parse:", cleaned);
+      throw new Error("Invalid JSON format from AI.");
+    }
+  }
+
   
   
 }
