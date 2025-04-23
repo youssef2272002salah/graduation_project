@@ -23,12 +23,8 @@ export const protect = expressAsyncHandler(async (req: Request, res: Response, n
     throw new AppError("You are not logged in. Please log in to access this resource.", 401);
   }
 
-  // console.log("Token:", token);
-  // console.log("Verifying JWT with secret:", process.env.JWT_SECRET);
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string; iat: number };
-
-  // console.log("Decoded token:", decoded);
 
   const currentUser = await UserModel.findById(decoded.id);
   if (!currentUser) {
