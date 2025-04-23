@@ -91,12 +91,12 @@ interface ICV extends Document {
 
 const cvSchema = new Schema<ICV>({
     user_id: { type: Schema.Types.ObjectId, ref: 'User' },
-    title: { type: String },
-    name: { type: String },
-    position: { type: String },
-    contactInformation: { type: String },
-    email: { type: String },
-    address: { type: String },
+    title: { type: String ,required: false},
+    name: { type: String ,required: false},
+    position: { type: String ,required: false},
+    contactInformation: { type: String ,required: false},
+    email: { type: String ,required: false},
+    address: { type: String ,required: false},
     socialMedia: [{
         socialMedia: String,
         link: String,

@@ -16,7 +16,7 @@ export class CvController {
           if (!user) {
               throw new AppError("User not found", 404);
           }
-    // req.body.email = user.email;
+    req.body.email = user.email;
     const cv: ICV = await cvService.create(req.body as CreateCVDTO, res);
     if (!cv || !cv._id) {
       throw new AppError("Cv not created", 404);
@@ -24,7 +24,7 @@ export class CvController {
     user.cvs.push(cv._id);
 
     await user.save();
-
+    console.log("save user");
 
     res.status(201).json({
       status: "success",
