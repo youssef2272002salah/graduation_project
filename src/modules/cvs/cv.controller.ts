@@ -11,19 +11,20 @@ const cvService = new CvService();
 
 export class CvController {
   createCv = expressAsyncHandler(async (req: Request, res: Response) => {
+
       const user = (req as AuthenticatedRequest).user;
           if (!user) {
               throw new AppError("User not found", 404);
           }
     req.body.email = user.email;
     const cv: ICV = await cvService.create(req.body as CreateCVDTO, res);
-    
     if (!cv || !cv._id) {
       throw new AppError("Cv not created", 404);
     }
-
     user.cvs.push(cv._id);
+
     await user.save();
+
 
     res.status(201).json({
       status: "success",
@@ -94,9 +95,9 @@ export class CvController {
     let cvAsJson = await cvService.uploadCv(filePath);
     let cvObject: ICV = JSON.parse(cvAsJson);
     cvObject.email = user.email;
-    cvObject.title = req.file.originalname;
+    cvObject.title = req.file.originalname ? req.file.originalname : "Untitled CV";
 
-    const cv: ICV = await cvService.create(cvObject, res);
+    const cv: ICV = await cvService.create(cvObject as CreateCVDTO, res);
     
     if (!cv || !cv._id) {
       throw new AppError("Cv not created", 404);

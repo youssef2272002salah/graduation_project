@@ -41,7 +41,6 @@ app.use(globalErrorHandler);
 process.on("exit", () => {
 logger.info("Logs flushed!");
 
-console.log("Logs flushed!");
 });
 
 export default app;

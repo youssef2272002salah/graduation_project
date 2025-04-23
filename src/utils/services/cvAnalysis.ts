@@ -179,7 +179,6 @@ export class ATSAnalysisService {
       model: "gemma2-9b-it",
       temperature: 0.3
     });
-    console.log(completion.choices[0]?.message?.content);
   
     const rawContent = completion.choices[0]?.message?.content || "";
     const cleaned = rawContent.replace(/```(json)?/g, "").trim();

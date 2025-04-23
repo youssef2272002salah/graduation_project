@@ -22,13 +22,20 @@ export class CvService {
   
 
   async create(cvDto: CreateCVDTO, res: Response) {
+    try {
     const newCv = await CVModel.create({
       ...cvDto,
     });    
+
     if (!newCv) {
       throw new AppError("Cv not created", 404);
     }
     return newCv;
+}
+    catch (error) {
+      console.log(error);
+      throw new AppError("Cv not created", 404);
+    }
   }
 
     async getAllMyCvs(email: string) {
@@ -61,15 +68,12 @@ export class CvService {
     async uploadCv (filePath: string) {
         
             const text = await pdfService.extractText(filePath);
-            console.log(text);
             const resumeId = uuidv4();
         
             // Cleanup the uploaded file after processing
             await pdfService.cleanup(filePath);
         
             const analysis = await atsAnalysisService.analyze(text);
-            console.log("---------------------------------------------------------------------")
-            console.log(analysis);
             // cast it to json 
             return JSON.stringify(analysis);
     }

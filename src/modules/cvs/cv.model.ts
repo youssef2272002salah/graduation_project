@@ -1,102 +1,102 @@
 import { Schema, model, Document } from 'mongoose';
 
 interface SocialMedia {
-    socialMedia: string;
-    link: string;
-    displayName: string;
+    socialMedia?: string;
+    link?: string;
+    displayName?: string;
 }
 
 interface Summary {
-    text: string;
-    isShownInPreview: boolean;
+    text?: string;
+    isShownInPreview?: boolean;
 }
 
 interface Education {
-    degree: string;
-    school: string;
-    startYear: string;
-    endYear: string;
-    notes: string;
-    isShownInPreview: boolean;
+    degree?: string;
+    school?: string;
+    startYear?: string;
+    endYear?: string;
+    notes?: string;
+    isShownInPreview?: boolean;
 }
 
 interface Course {
-    name: string;
-    school: string;
-    startYear: string;
-    endYear: string;
-    link: string;
-    notes: Summary[];
-    isShownInPreview: boolean;
+    name?: string;
+    school?: string;
+    startYear?: string;
+    endYear?: string;
+    link?: string;
+    notes?: Summary[];
+    isShownInPreview?: boolean;
 }
 
 interface Skill {
-    text: string;
-    isShownInPreview: boolean;
+    text?: string;
+    isShownInPreview?: boolean;
 }
 
 interface SkillCategory {
-    title: string;
-    skills: Skill[];
-    isShownInPreview: boolean;
+    title?: string;
+    skills?: Skill[];
+    isShownInPreview?: boolean;
 }
 
 interface Language {
-    title: string;
-    level: string;
-    isShownInPreview: boolean;
+    title?: string;
+    level?: string;
+    isShownInPreview?: boolean;
 }
 
 interface WorkExperience {
-    company: string;
-    href: string;
-    position: string;
-    startYear: string;
-    endYear: string;
-    workType: string;
-    location: string;
-    technologies: string[];
-    achievements: Summary[];
-    isShownInPreview: boolean;
+    company?: string;
+    href?: string;
+    position?: string;
+    startYear?: string;
+    endYear?: string;
+    workType?: string;
+    location?: string;
+    technologies?: string[];
+    achievements?: Summary[];
+    isShownInPreview?: boolean;
 }
 
 interface Titles {
-    profile: string;
-    experience: string;
-    education: string;
-    skills: string;
-    languages: string;
-    certification: string;
+    profile?: string;
+    experience?: string;
+    education?: string;
+    skills?: string;
+    languages?: string;
+    certification?: string;
 }
 
 interface ICV extends Document {
     _id: string;
-    user_id: object;
-    title: string;
-    name: string;
-    position: string;
-    contactInformation: string;
-    email: string;
-    address: string;
-    socialMedia: SocialMedia[];
-    summary: Summary[];
-    educations: Education[];
-    courses: Course[];
-    skills: SkillCategory[];
-    languages: Language[];
-    workExperience: WorkExperience[];
-    titles: Titles;
-    order: string[];
+    user_id?: object;
+    title?: string;
+    name?: string;
+    position?: string;
+    contactInformation?: string;
+    email?: string;
+    address?: string;
+    socialMedia?: SocialMedia[];
+    summary?: Summary[];
+    educations?: Education[];
+    courses?: Course[];
+    skills?: SkillCategory[];
+    languages?: Language[];
+    workExperience?: WorkExperience[];
+    titles?: Titles;
+    order?: string[];
 }
 
 const cvSchema = new Schema<ICV>({
     user_id: { type: Schema.Types.ObjectId, ref: 'User' },
-    title: { type: String, required: true },
-    name: { type: String, required: true },
-    position: { type: String, required: true },
-    contactInformation: { type: String, required: true },
-    email: { type: String, required: true },
-    address: { type: String, required: true },
+    title: { type: String },
+    name: { type: String },
+    position: { type: String },
+    contactInformation: { type: String },
+    email: { type: String },
+    address: { type: String },
     socialMedia: [{
         socialMedia: String,
         link: String,

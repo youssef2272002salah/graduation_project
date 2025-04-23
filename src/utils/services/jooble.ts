@@ -20,8 +20,6 @@ export class JoobleService {
         
             const jobs = response.data.jobs;
         
-            console.log('Found Jobs:', jobs.length);
-            console.log('Sample Job:', jobs[0]);
             const returnedJobs = jobs.map((job: any) => ({
                 title: job.title|| 'job title not available',
                 company: job.company || 'company name not available',

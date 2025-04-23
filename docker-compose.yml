@@ -1,0 +1,10 @@
+services:
+  typefest:
+    image: typefest
+    build:
+      context: node_modules/type-fest
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000
