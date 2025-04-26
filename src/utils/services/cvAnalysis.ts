@@ -194,17 +194,24 @@ export class ATSAnalysisService {
   }
 
   async getCareerPath(cv: any, desiredCareer: string): Promise<any> {
-    const prompt = `You are an expert in career counseling.
+    const prompt = `You are an expert in career counseling and technical skill development.
+
+    Analyze the following structured CV and provide a highly specialized, step-by-step career path to transition into the desired career field.
     
-    Analyze the following structured CV and provide a step-by-step career path to transition into the desired career.
-  
+    ⚡ Focus on **technical skills, core knowledge areas, required certifications, practical projects**, and **industry tools** that the candidate must master to succeed.
+    
+    ⚡ Make sure each module focuses on real topics from the target career path, avoiding general advice like self-assessment or goal-setting.
+    
+    ⚡ Prioritize hands-on learning, industry practices, and actual job-ready abilities.
+    
     Structured CV:
     ${JSON.stringify(cv)}
-  
-    Desired Career: ${desiredCareer}
+    
+    Desired Career:
+    ${desiredCareer}
     
     IMPORTANT: Return the career path in the following JSON format, WITHOUT ANY ADDITIONAL TEXT:
-  
+    
     {
       "modules": [
         {
@@ -250,8 +257,9 @@ export class ATSAnalysisService {
           "side": "right"
         }
       ]
-    }`;
-  
+    }
+    `;
+    
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "llama-3.3-70b-versatile",
