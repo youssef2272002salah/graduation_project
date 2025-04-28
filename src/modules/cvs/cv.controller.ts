@@ -142,6 +142,7 @@ export class CvController {
   atsAnalysis = expressAsyncHandler(async (req: Request, res: Response) => {
     const cv = await cvService.getCvById(req.params.id);
     const jobDescription = req.query.jobDescription as string;
+    // const jobDescription = req.body.jobDescription as string;
     console.log("jobDescription", jobDescription);
     if (!cv) {
       throw new AppError("Cv not found", 404);
