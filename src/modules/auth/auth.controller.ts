@@ -8,12 +8,13 @@ const authService = new AuthService();
 
 export class AuthController {
   signup = expressAsyncHandler(async (req: Request, res: Response) => {
+    console.log("req.body", req.body);
     const user = await authService.signup(req.body as SignupDto, res);
-    res.status(201).json({
-      status: "success",
-      message: "Signup successful! Please verify your email.",
-      data: user,
-    });
+    // res.status(201).json({
+    //   status: "success",
+    //   message: "Signup successful! Please verify your email.",
+    //   data: user,
+    // });
   });
 
   login = expressAsyncHandler(async (req: Request, res: Response) => {

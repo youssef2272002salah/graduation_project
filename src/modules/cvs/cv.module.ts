@@ -11,7 +11,7 @@ const cvController = new CvController();
 
 
 cvRouter.post("/uploadCv", protect,upload.single('resume'), cvController.uploadCv);
-cvRouter.post("/createCv",protect, validateDto(CreateCVDTO), cvController.createCv);
+cvRouter.post("/createCv",protect, cvController.createCv);
 
 cvRouter.post("/careerRecommendation/:id", protect, cvController.getCareerRecommendation);
 cvRouter.post("/careerPath/:id", protect, cvController.careerPath);
