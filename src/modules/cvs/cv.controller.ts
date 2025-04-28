@@ -130,7 +130,7 @@ export class CvController {
     if (!cv) {
       throw new AppError("Cv not found", 404);
     }
-    const desiredCareer = req.body.desiredCareer;
+    const desiredCareer = req.query.track as string;
     const path = await cvService.getCareerPath(cv, desiredCareer);
     res.status(200).json({
       status: "success",
@@ -141,7 +141,8 @@ export class CvController {
 
   atsAnalysis = expressAsyncHandler(async (req: Request, res: Response) => {
     const cv = await cvService.getCvById(req.params.id);
-    const jobDescription = req.body.jobDescription;
+    const jobDescription = req.query.jobDescription as string;
+    console.log("jobDescription", jobDescription);
     if (!cv) {
       throw new AppError("Cv not found", 404);
     }
