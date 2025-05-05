@@ -86,7 +86,6 @@ return res.status(200).json({
   }
 
   async logout(): Promise<void> {
-    // Logout logic is simple in a stateless JWT system
   }
 
   async verifyEmail(token: string) {

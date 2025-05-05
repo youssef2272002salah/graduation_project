@@ -37,9 +37,70 @@ export class AuthController {
   verifyEmail = expressAsyncHandler(async (req: Request, res: Response) => {
     const token = req.query.token as string;
     await authService.verifyEmail(token);
-    res.status(200).json({ message: "Email verified successfully" });
+  
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>تم التحقق من البريد الإلكتروني</title>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #8b919e, #3487f3);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+          }
+          .container {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 40px 24px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+          }
+          h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+          }
+          p {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+          }
+          a.button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+          }
+          a.button:hover {
+            background-color: #1d4ed8;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>تم التحقق من بريدك الإلكتروني بنجاح</h1>
+          <p>يمكنك الآن الانتقال إلى الموقع لمتابعة استخدام CareerC.</p>
+          <a class="button" href="https://careerc.me">الذهاب إلى الموقع</a>
+        </div>
+      </body>
+      </html>
+    `);
   });
-
+  
   resendVerificationEmail = expressAsyncHandler(async (req: Request, res: Response) => {
     await authService.resendVerificationEmail(req.body.email);
     res.status(200).json({ message: "Verification email sent successfully" });
