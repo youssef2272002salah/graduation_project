@@ -123,7 +123,7 @@ export class ATSAnalysisService {
 
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      model: "llama3-8b-8192",
       temperature: 0.3
     });
 
@@ -176,7 +176,7 @@ export class ATSAnalysisService {
   
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      model: "llama3-8b-8192",
       temperature: 0.3
     });
   
@@ -262,7 +262,7 @@ export class ATSAnalysisService {
     
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      model: "llama3-8b-8192",
       temperature: 0.3
     });
 
@@ -324,7 +324,7 @@ export class ATSAnalysisService {
   
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      model: "llama3-8b-8192	",
       temperature: 0.3
     });
   
