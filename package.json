@@ -37,6 +37,7 @@
   "dependencies": {
     "@logtail/node": "^0.5.2",
     "@logtail/winston": "^0.5.2",
+    "@mistralai/mistralai": "^1.7.2",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/morgan": "^1.9.9",
