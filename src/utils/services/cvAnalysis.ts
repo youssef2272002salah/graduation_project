@@ -139,6 +139,43 @@ export class ATSAnalysisService {
     }
   }
 
+  async updateCvByPrompt(cv: any, new_prompt: string): Promise<any> {
+    const prompt = `You are an expert in structured CV editing.
+  
+  You will receive two inputs:
+  1. A structured CV in JSON format.
+  2. A natural language instruction describing the changes to apply.
+  
+  Apply the instruction to the CV and return ONLY the updated CV in valid JSON format. DO NOT include any explanation or extra text.
+  
+  Instruction:
+  "${new_prompt}"
+  
+  Original CV:
+  \`\`\`json
+  ${JSON.stringify(cv, null, 2)}
+  \`\`\`
+  
+  IMPORTANT: Return ONLY the updated CV in valid JSON format. Do NOT wrap it in \`\`\`json or add any explanation.`;
+  
+    const completion = await this.groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gemma2-9b-it",
+      temperature: 0.3
+    });
+  
+    const rawContent = completion.choices[0]?.message?.content || "";
+    const cleaned = rawContent.replace(/```(json)?/g, "").trim();
+  
+    try {
+      return JSON.parse(cleaned);
+    } catch (error) {
+      console.error("Failed to parse:", cleaned);
+      throw new Error("Invalid JSON format from AI.");
+    }
+  }
+  
+
   async getCareerRecommendation(cv: any): Promise<any> {
     const prompt = `You are an expert in career counseling.
   

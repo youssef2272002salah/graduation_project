@@ -99,6 +99,14 @@ export class CvService {
         return analysis;
     }
 
+    async updateCvByPrompt(cv: ICV, prompt: string) {
+        const updatedCv = await atsAnalysisService.updateCvByPrompt(cv, prompt);
+        if (!updatedCv) {
+            throw new AppError("Cv not updated", 404);
+        }
+        return updatedCv;
+    }
+
 
 
 
