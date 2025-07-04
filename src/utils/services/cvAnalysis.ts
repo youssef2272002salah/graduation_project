@@ -123,7 +123,7 @@ export class ATSAnalysisService {
 
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-guard-3-8b",
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
       temperature: 0.3
     });
 
@@ -316,7 +316,7 @@ export class ATSAnalysisService {
   
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "deepseek-r1-distill-llama-70b",
+      model: "llama-3.3-70b-versatile",
       temperature: 0.3
     });
   
