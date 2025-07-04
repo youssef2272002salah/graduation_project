@@ -156,8 +156,110 @@ export class ATSAnalysisService {
   ${JSON.stringify(cv, null, 2)}
   \`\`\`
   
-  IMPORTANT: Return ONLY the updated CV in valid JSON format. Do NOT wrap it in \`\`\`json or add any explanation.`;
-  
+  IMPORTANT: Return the structured CV in the following JSON format, WITHOUT ANY ADDITIONAL TEXT:
+
+    {
+      "name": "Full Name",
+      "position": "Current Job Title",
+      "contactInformation": "Phone Number",
+      "email": "Email Address",
+      "address": "City, Country",
+      "socialMedia": [
+        {
+          "socialMedia": "Platform Name",
+          "link": "Profile URL",
+          "displayName": "Profile Display Name"
+        }
+      ],
+      "summary": [
+        {
+          "text": "Professional summary extracted from the resume.",
+          "isShownInPreview": true
+        }
+      ],
+      "educations": [
+        {
+          "degree": "Degree Name",
+          "school": "University Name",
+          "startYear": "YYYY-MM-DD",
+          "endYear": "YYYY-MM-DD",
+          "notes": "Relevant courses or achievements",
+          "isShownInPreview": true
+        }
+      ],
+      "courses": [
+        {
+          "name": "Course Name",
+          "school": "Institution Name",
+          "startYear": "YYYY-MM-DD",
+          "endYear": "YYYY-MM-DD",
+          "link": "Certificate URL",
+          "notes": [
+            {
+              "text": "Key topics covered",
+              "isShownInPreview": true
+            }
+          ],
+          "isShownInPreview": true
+        }
+      ],
+      "skills": [
+        {
+          "title": "Category Name",
+          "skills": [
+            {
+              "text": "Skill Name",
+              "isShownInPreview": true
+            }
+          ],
+          "isShownInPreview": true
+        }
+      ],
+      "languages": [
+        {
+          "title": "Language Name",
+          "level": "Proficiency Level",
+          "isShownInPreview": true
+        }
+      ],
+      "workExperience": [
+        {
+          "company": "Company Name",
+          "isShownInPreview": true,
+          "href": "Company Website URL",
+          "position": "Job Title",
+          "startYear": "YYYY-MM-DD",
+          "endYear": "YYYY-MM-DD",
+          "workType": "Remote/On-site/Hybrid",
+          "location": "City, Country",
+          "technologies": ["Tech 1", "Tech 2"],
+          "achievements": [
+            {
+              "text": "Key achievement from this role",
+              "isShownInPreview": true
+            }
+          ]
+        }
+      ],
+      "titles": {
+        "profile": "PROFILE",
+        "experience": "EXPERIENCE",
+        "education": "EDUCATION",
+        "skills": "SKILLS",
+        "languages": "LANGUAGES",
+        "certification": "CERTIFICATION"
+      },
+      "order": [
+        "contactInformation",
+        "profile",
+        "workExperience",
+        "education",
+        "courses",
+        "skills",
+        "languages"
+      ]
+    }`;
+ 
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "gemma2-9b-it",
@@ -166,6 +268,7 @@ export class ATSAnalysisService {
   
     const rawContent = completion.choices[0]?.message?.content || "";
     const cleaned = rawContent.replace(/```(json)?/g, "").trim();
+    console.log("cleaned", cleaned);
   
     try {
       return JSON.parse(cleaned);

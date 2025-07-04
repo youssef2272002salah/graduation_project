@@ -172,10 +172,12 @@ export class CvController {
 
   updateCvByPrompt = expressAsyncHandler(async (req: Request, res: Response) => {
     const cv = req.body.cvdata as ICV;
+    console.log("cv", cv);
     const prompt = req.body.prompt as string;
     if (!prompt) {
       throw new AppError("Please provide a prompt", 400);
     }
+    console.log(prompt);
     const updatedCv = await cvService.updateCvByPrompt(cv, prompt);
     res.status(200).json({
       status: "success",
