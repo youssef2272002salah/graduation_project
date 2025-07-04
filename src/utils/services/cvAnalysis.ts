@@ -123,7 +123,7 @@ export class ATSAnalysisService {
 
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "gemma2-9b-it",
+      model: "llama-guard-3-8b",
       temperature: 0.3
     });
 
@@ -316,7 +316,7 @@ export class ATSAnalysisService {
   
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "gemma2-9b-it",
+      model: "deepseek-r1-distill-llama-70b",
       temperature: 0.3
     });
   
@@ -402,7 +402,7 @@ export class ATSAnalysisService {
     
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "gemma2-9b-it	",
+      model: "llama-3.3-70b-versatile",
       temperature: 0.3
     });
 
@@ -464,7 +464,7 @@ export class ATSAnalysisService {
   
     const completion = await this.groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "gemma2-9b-it",
+      model: "llama-3.1-8b-instant",
       temperature: 0.3
     });
   
