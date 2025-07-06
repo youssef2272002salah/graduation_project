@@ -1,117 +1,115 @@
-import { CVModel, ICV } from './cv.model';
-import {CreateCVDTO } from '../cvs/cv.dto';
-import {AppError} from '../../utils/appError';
+import { CVModel, ICV } from "./cv.model";
+import { CreateCVDTO } from "../cvs/cv.dto";
+import { AppError } from "../../utils/appError";
 import { Response } from "express";
-require('dotenv').config();
-const { Mistral } = require('@mistralai/mistralai');
+require("dotenv").config();
+const { Mistral } = require("@mistralai/mistralai");
 
-const MODEL = 'mistral-large-2407'; // Change to the model you want
+const MODEL = "mistral-large-2407"; // Change to the model you want
 
 const apiKey = process.env.MISTRAL_API_KEY;
 const client = new Mistral({ apiKey });
 
-import { v4 as uuidv4 } from 'uuid';
-import { PDFService } from '../../utils/services/PDFService';
-import { GroqService } from '../../utils/services/grok.service';
+import { v4 as uuidv4 } from "uuid";
+import { PDFService } from "../../utils/services/PDFService";
+import { GroqService } from "../../utils/services/grok.service";
+// import { OllamaCvAnalysisService } from "../../utils/services/OllamaCvAnalysisService";
+import { GroqRAGService } from "../../utils/services/GroqRAGService";
 
-const { ATSAnalysisService } = require('../../utils/services/cvAnalysis');
-const { JoobleService } = require('../../utils/services/jooble');
+const { ATSAnalysisService } = require("../../utils/services/cvAnalysis");
+const { JoobleService } = require("../../utils/services/jooble");
 
-
+const groqRAGService = new GroqRAGService();
+// const ollamaService = new OllamaCvAnalysisService(); 
 const groqService = new GroqService();
 const joobleService = new JoobleService();
 
 const pdfService = new PDFService();
 const atsAnalysisService = new ATSAnalysisService(groqService);
 
-
 export class CvService {
-  
-
   async create(cvDto: CreateCVDTO, res: Response) {
     try {
-    const newCv = await CVModel.create({
-      ...cvDto,
-    });    
+      const newCv = await CVModel.create({
+        ...cvDto,
+      });
 
-    if (!newCv) {
-      throw new AppError("Cv not created", 404);
-    }
-    return newCv;
-}
-    catch (error) {
+      if (!newCv) {
+        throw new AppError("Cv not created", 404);
+      }
+      return newCv;
+    } catch (error) {
       console.log(error);
       throw new AppError("Cv not created", 404);
     }
   }
 
-    async getAllMyCvs(email: string) {
-        const cvs = await CVModel.find({ email });
-        return cvs;
-    }
+  async getAllMyCvs(email: string) {
+    const cvs = await CVModel.find({ email });
+    return cvs;
+  }
 
+  // get cv by id
+  async getCvById(id: string) {
+    const cv = await CVModel.findById(id);
+    return cv;
+  }
 
-    // get cv by id
-    async getCvById(id: string) {
-        const cv = await CVModel.findById(id);
-        return cv;
-    }
+  // update cv by id
+  async updateCvById(id: string, cvDto: CreateCVDTO) {
+    const updatedCv = await CVModel.findByIdAndUpdate(id, cvDto, { new: true });
+    return updatedCv;
+  }
 
-    // update cv by id
-    async updateCvById(id: string, cvDto: CreateCVDTO) {
-        const updatedCv = await CVModel.findByIdAndUpdate(id
-            , cvDto
-            , { new: true });
-        return updatedCv;
-    }
+  // delete cv by id
+  async deleteCvById(id: string) {
+    const deletedCv = await CVModel.findByIdAndDelete(id);
+    return deletedCv;
+  }
 
-    // delete cv by id
-    async deleteCvById(id: string) {
-        const deletedCv = await CVModel.findByIdAndDelete(id);
-        return deletedCv;
-    }
+  async uploadCv(filePath: string) {
+    const text = await pdfService.extractText(filePath);
+    const resumeId = uuidv4();
 
-    
-    async uploadCv (filePath: string) {
-        
-            const text = await pdfService.extractText(filePath);
-            const resumeId = uuidv4();
-        
-            // Cleanup the uploaded file after processing
-            await pdfService.cleanup(filePath);
-        
-            const analysis = await atsAnalysisService.analyze(text);
-            // cast it to json 
-            return JSON.stringify(analysis);
-    }
+    // Cleanup the uploaded file after processing
+    await pdfService.cleanup(filePath);
 
+    const analysis = await atsAnalysisService.analyze(text);
+    // cast it to json
+    return JSON.stringify(analysis);
+  }
 
-    async getCareerRecommendation(cv: ICV) {
-        const analysis = await atsAnalysisService.getCareerRecommendation(cv);
-        return analysis;
-    }
+  async getCareerRecommendation(cv: ICV) {
+    console.log("⚡️ Using Hybrid Groq + Weaviate RAG service...");
+    const analysis = await groqRAGService.getCareerRecommendation(cv);
 
-    async getCareerPath(cv: ICV, desiredCareer: string) {
-        const analysis = await atsAnalysisService.getCareerPath(cv, desiredCareer);
-        return analysis;
-    }
+    // const analysis = await ollamaService.getCareerRecommendation(cv);
+    // const analysis = await atsAnalysisService.getCareerRecommendation(cv);
+    return analysis;
+  }
 
-    async atsAnalysis(cv: ICV,jobDescription: string) {
-        const analysis = await atsAnalysisService.atsAnalysis(cv,jobDescription);
-        return analysis;
-    }
+  async getCareerPath(cv: ICV, desiredCareer: string) {
+    console.log("🧪 Using local Ollama/Weaviate for career path...");
+    const analysis = await atsAnalysisService.getCareerPath(cv, desiredCareer);
+    // const analysis = await ollamaService.getCareerPath(cv.cv, desiredCareer);
+    return analysis;
+  }
 
-    async getJobs(track: string, location: string) {
-        const analysis = await joobleService.getJobs(track, location);
-        return analysis;
-    }
+  async atsAnalysis(cv: ICV, jobDescription: string) {
+    console.log("🧪 Using local Ollama/Weaviate for career path...");
+    const analysis = await atsAnalysisService.atsAnalysis(cv, jobDescription);
+    return analysis;
+  }
 
+  async getJobs(track: string, location: string) {
+    const analysis = await joobleService.getJobs(track, location);
+    return analysis;
+  }
 
-    
-    async updateCvByPrompt(cv: ICV, new_prompt: string) {
-      try {
-        console.log(cv)
-        const cleanText =  `You are an expert in structured CV editing.
+  async updateCvByPrompt(cv: ICV, new_prompt: string) {
+    try {
+      console.log(cv);
+      const cleanText = `You are an expert in structured CV editing.
   
         You will receive two inputs:
         1. A structured CV in JSON format.
@@ -230,40 +228,36 @@ export class CvService {
               "languages"
             ]
           }`;
-        const response = await client.chat.complete({
-          model: MODEL,
-          messages: [{ role: 'user', content: cleanText }]
-        });
-    
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-          console.warn(`⚠️ No content returned from model: ${MODEL}`);
-          return null;
-        }
-    
-        console.log(`✅ Success with model: ${MODEL}`);
-        
-        // Attempt to extract and parse JSON
-        const jsonMatch = content.match(/\{[\s\S]*\}/); // Match first JSON block
-        if (!jsonMatch) {
-          console.error("❌ No valid JSON found in response.");
-          return null;
-        }
-    
-        const json = JSON.parse(jsonMatch[0]);
-        console.log("Parsed JSON:", json);
-        return json;
-    
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error(`❌ Error with model ${MODEL}: ${error.message}`);
-        } else {
-          console.error(`❌ Error with model ${MODEL}: ${String(error)}`);
-        }
+      const response = await client.chat.complete({
+        model: MODEL,
+        messages: [{ role: "user", content: cleanText }],
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        console.warn(`⚠️ No content returned from model: ${MODEL}`);
         return null;
       }
+
+      console.log(`✅ Success with model: ${MODEL}`);
+
+      // Attempt to extract and parse JSON
+      const jsonMatch = content.match(/\{[\s\S]*\}/); // Match first JSON block
+      if (!jsonMatch) {
+        console.error("❌ No valid JSON found in response.");
+        return null;
+      }
+
+      const json = JSON.parse(jsonMatch[0]);
+      console.log("Parsed JSON:", json);
+      return json;
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(`❌ Error with model ${MODEL}: ${error.message}`);
+      } else {
+        console.error(`❌ Error with model ${MODEL}: ${String(error)}`);
+      }
+      return null;
     }
-
-
-
+  }
 }

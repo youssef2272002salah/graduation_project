@@ -1,12 +1,71 @@
+import weaviate, { WeaviateClient } from "weaviate-ts-client";
 import { Groq } from "groq-sdk";
+import { Ollama } from "ollama"; // We will use this for embeddings now
+import { logger } from "../logging";
 
-export class ATSAnalysisService {
+// The EmbeddingService using ollama
+class EmbeddingService {
+  private static ollamaInstance: Ollama | null = null;
+  private static model: string = "nomic-embed-text";
+
+  private static getOllamaInstance(): Ollama {
+    if (this.ollamaInstance === null) {
+      logger.info("Initializing Ollama client for EmbeddingService...");
+      this.ollamaInstance = new Ollama({ host: "http://localhost:11434" });
+    }
+    return this.ollamaInstance;
+  }
+
+  /**
+   * Creates a vector embedding from a piece of text using the Ollama API.
+   */
+  static async createEmbedding(text: string): Promise<number[]> {
+    const ollama = this.getOllamaInstance();
+    logger.debug(`Creating embedding for text: "${text.substring(0, 50)}..."`);
+    const response = await ollama.embeddings({
+      model: this.model,
+      prompt: text,
+    });
+    return response.embedding;
+  }
+}
+
+export class GroqRAGService {
+  private weaviateClient: WeaviateClient;
   private groq: Groq;
 
   constructor() {
+    this.weaviateClient = weaviate.client({
+      scheme: "http",
+      host: "localhost:8080",
+    });
     this.groq = new Groq({
       apiKey: process.env.GROQ_API_KEY,
     });
+  }
+
+  /**
+   * Uses Groq to extract a concise list of skills from a CV.
+   */
+  private async groqExtractSkills(cv: any): Promise<string> {
+    logger.debug("-> Asking Groq to extract skills from CV...");
+    const prompt = `Analyze the 'skills' and 'workExperience' sections of the following structured CV JSON. Extract a concise, comma-separated list of the most important technical skills and programming languages. Return ONLY the comma-separated string, nothing else.
+
+        CV JSON:
+        ${JSON.stringify(
+          { skills: cv.skills, workExperience: cv.workExperience },
+          null,
+          2
+        )}`;
+
+    const completion = await this.groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama3-8b-8192", // Use a fast model for this simple task
+    });
+
+    const skills = completion.choices[0]?.message?.content?.trim() || "";
+    logger.debug(`-> Groq Extracted Skills: ${skills}`);
+    return skills;
   }
 
   async analyze(resumeText: string): Promise<any> {
@@ -119,23 +178,21 @@ export class ATSAnalysisService {
         "skills",
         "languages"
       ]
-    }`;
+    }`; // Using the exact, full prompt from your file
 
     const completion = await this.groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      messages: [
+        { role: "user", content: prompt.replace("${resumeText}", resumeText) },
+      ],
+      model: "gemma2-9b-it", // Using gemma2 as you had it in your new file
       temperature: 0.3,
+      response_format: { type: "json_object" },
     });
-
-    const rawContent = completion.choices[0]?.message?.content || "";
-    const cleaned = rawContent.replace(/```(json)?/g, "").trim();
-
-    try {
-      return JSON.parse(cleaned);
-    } catch (error) {
-      console.error("Failed to parse:", cleaned);
-      throw new Error("Invalid JSON format from AI.");
-    }
+    const finalJson = JSON.parse(
+      completion.choices[0]?.message?.content || "{}"
+    );
+    logger.info({ message: "✅ Groq Output for analyze", data: finalJson });
+    return finalJson;
   }
 
   async updateCvByPrompt(cv: any, new_prompt: string): Promise<any> {
@@ -260,33 +317,123 @@ export class ATSAnalysisService {
     }`;
 
     const completion = await this.groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "user",
+          content: prompt
+            .replace("${new_prompt}", new_prompt)
+            .replace(
+              "${JSON.stringify(cv, null, 2)}",
+              JSON.stringify(cv, null, 2)
+            ),
+        },
+      ],
       model: "gemma2-9b-it",
       temperature: 0.3,
+      response_format: { type: "json_object" },
     });
-
-    const rawContent = completion.choices[0]?.message?.content || "";
-    const cleaned = rawContent.replace(/```(json)?/g, "").trim();
-    console.log("cleaned", cleaned);
-
-    try {
-      return JSON.parse(cleaned);
-    } catch (error) {
-      console.error("Failed to parse:", cleaned);
-      throw new Error("Invalid JSON format from AI.");
-    }
+    const finalJson = JSON.parse(
+      completion.choices[0]?.message?.content || "{}"
+    );
+    logger.info({
+      message: "✅ Groq Output for updateCvByPrompt",
+      data: finalJson,
+    });
+    return finalJson;
   }
 
+  async atsAnalysis(cv: any, jobDescription: string): Promise<any> {
+    const prompt = `You are an expert in resume analysis.
+  
+  Analyze the following structured CV **against the provided job description**, and provide a detailed ATS (Applicant Tracking System) analysis. Evaluate how well the CV matches the job requirements based on skills, experience, structure, and relevance.
+  
+  Structured CV:
+  ${JSON.stringify(cv)}
+  
+  Job Description:
+  ${jobDescription}
+  
+  IMPORTANT: Return the ATS analysis in the following strict JSON format, WITHOUT ANY ADDITIONAL TEXT:
+  
+  {
+    "atsScore": {
+      "overall": number (0-100),
+      "keywords": [array of matched keywords],
+      "missingKeywords": [array of missing keywords],
+      "formatScore": number (0-100)
+    },
+    "jobMatch": {
+      "score": number (0-100),
+      "matchingSkills": [array of matching skills],
+      "missingSkills": [array of missing skills],
+      "recommendations": [array of suggestions to improve match],
+      "relevance": number (0-100)
+    },
+    "structure": {
+      "completeness": number (0-100),
+      "sectionsPresent": [array of present sections],
+      "sectionsMissing": [array of missing sections],
+      "suggestions": [array of structure improvement suggestions],
+      "readability": number (0-100)
+    },
+    "detailedFeedback": {
+      "overallScore": number (0-100),
+      "summary": "short summary of resume quality",
+      "strengths": [array of strengths],
+      "weaknesses": [array of weaknesses],
+      "actionItems": [array of specific action items],
+      "improvementPlan": "short improvement strategy"
+    }
+  }`;
+
+    const completion = await this.groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: prompt
+            .replace("${JSON.stringify(cv)}", JSON.stringify(cv))
+            .replace("${jobDescription}", jobDescription),
+        },
+      ],
+      model: "llama3-8b-8192", // Using llama3-8b as you had it in your old file
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    });
+    const finalJson = JSON.parse(
+      completion.choices[0]?.message?.content || "{}"
+    );
+    logger.info({ message: "✅ Groq Output for atsAnalysis", data: finalJson });
+    return finalJson;
+  }
+
+  // =========== RAG-Enabled Methods ===========
+
   async getCareerRecommendation(cv: any): Promise<any> {
-    const prompt = `You are an expert in career counseling.
-  
-    Analyze the following structured CV and provide career recommendations based on the candidate's skills and experience:
-  
-    Structured CV:
-    ${JSON.stringify(cv)}
-    
-    IMPORTANT: Return the career recommendations in the following JSON format, WITHOUT ANY ADDITIONAL TEXT:
-  
+    // Step 1: Call Groq to extract skills
+    const userSkills = await this.groqExtractSkills(cv);
+    if (!userSkills) throw new Error("Groq failed to extract skills from CV.");
+
+    // Step 2: Use skills to query Weaviate
+    const vectorAsArray = await EmbeddingService.createEmbedding(userSkills);
+
+    const weaviateResponse = await this.weaviateClient.graphql
+      .get()
+      .withClassName("Job")
+      .withFields("job_title required_skills")
+      .withNearVector({ vector: vectorAsArray })
+      .withLimit(3)
+      .do();
+    const retrievedJobs = weaviateResponse.data.Get.Job;
+
+    // Step 3: Call Groq again with the augmented prompt
+    const augmentedPrompt = `Based on the candidate's skills AND the following relevant job data, provide career recommendations.
+        Candidate's Skills: ${userSkills}
+        Relevant Job Data (for context you don't have to stick to them): ${JSON.stringify(
+          retrievedJobs,
+          null,
+          2
+        )}
+        IMPORTANT: Return the career recommendations in the following JSON format, WITHOUT ANY ADDITIONAL TEXT:
     {
       "careers": [
         {
@@ -313,41 +460,49 @@ export class ATSAnalysisService {
     }`;
 
     const completion = await this.groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: augmentedPrompt }],
+      model: "llama3-70b-8192", // Using the powerful llama3-70b as you had it
       temperature: 0.3,
+      response_format: { type: "json_object" },
     });
 
-    const rawContent = completion.choices[0]?.message?.content || "";
-    const cleaned = rawContent.replace(/```(json)?/g, "").trim();
-
-    try {
-      return JSON.parse(cleaned);
-    } catch (error) {
-      console.error("Failed to parse:", cleaned);
-      throw new Error("Invalid JSON format from AI.");
-    }
+    const finalJson = JSON.parse(
+      completion.choices[0]?.message?.content || "{}"
+    );
+    logger.info({
+      message: "✅ Groq RAG Output for getCareerRecommendation",
+      data: finalJson,
+    });
+    return finalJson;
   }
 
   async getCareerPath(cv: any, desiredCareer: string): Promise<any> {
-    const prompt = `You are an expert in career counseling and technical skill development.
+    // Step 1: Call Groq to extract user's current skills
+    const userSkills = await this.groqExtractSkills(cv);
+    if (!userSkills) throw new Error("Groq failed to extract skills from CV.");
 
-    Analyze the following structured CV and provide a highly specialized, step-by-step career path to transition into the desired career field.
-    
-    ⚡ Focus on **technical skills, core knowledge areas, required certifications, practical projects**, and **industry tools** that the candidate must master to succeed.
-    
-    ⚡ Make sure each module focuses on real topics from the target career path, avoiding general advice like self-assessment or goal-setting.
-    
-    ⚡ Prioritize hands-on learning, industry practices, and actual job-ready abilities.
-    
-    Structured CV:
-    ${JSON.stringify(cv)}
-    
-    Desired Career:
-    ${desiredCareer}
-    
-    IMPORTANT: Return the career path in the following JSON format, WITHOUT ANY ADDITIONAL TEXT:
-    
+    // Step 2: Use the 'desiredCareer' to query Weaviate for context
+    const vectorAsArray = await EmbeddingService.createEmbedding(userSkills);
+
+    const weaviateResponse = await this.weaviateClient.graphql
+      .get()
+      .withClassName("Job")
+      .withFields("job_title required_skills career_path")
+      .withNearVector({ vector: vectorAsArray })
+      .withLimit(1)
+      .do();
+    const retrievedJob = weaviateResponse.data.Get.Job[0];
+
+    // Step 3: Call Groq again with the augmented prompt
+    const augmentedPrompt = `Create a detailed, technical roadmap for a person to achieve their desired career.
+        Candidate's Current Skills: ${userSkills}
+        Desired Career: ${desiredCareer}
+        Use this real job data as context for the required skills and career path, but you don't have to stick to them: ${JSON.stringify(
+          retrievedJob,
+          null,
+          2
+        )}
+        IMPORTANT: Return the career path in the following JSON format, WITHOUT ANY ADDITIONAL TEXT:
     {
       "modules": [
         {
@@ -397,80 +552,19 @@ export class ATSAnalysisService {
     `;
 
     const completion = await this.groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: augmentedPrompt }],
+      model: "llama3-70b-8192", // Using the powerful llama3-70b as you had it
       temperature: 0.3,
+      response_format: { type: "json_object" },
     });
 
-    const rawContent = completion.choices[0]?.message?.content || "";
-    const cleaned = rawContent.replace(/```(json)?/g, "").trim();
-
-    try {
-      return JSON.parse(cleaned);
-    } catch (error) {
-      console.error("Failed to parse:", cleaned);
-      throw new Error("Invalid JSON format from AI.");
-    }
-  }
-
-  async atsAnalysis(cv: any, jobDescription: string): Promise<any> {
-    const prompt = `You are an expert in resume analysis.
-  
-  Analyze the following structured CV **against the provided job description**, and provide a detailed ATS (Applicant Tracking System) analysis. Evaluate how well the CV matches the job requirements based on skills, experience, structure, and relevance.
-  
-  Structured CV:
-  ${JSON.stringify(cv)}
-  
-  Job Description:
-  ${jobDescription}
-  
-  IMPORTANT: Return the ATS analysis in the following strict JSON format, WITHOUT ANY ADDITIONAL TEXT:
-  
-  {
-    "atsScore": {
-      "overall": number (0-100),
-      "keywords": [array of matched keywords],
-      "missingKeywords": [array of missing keywords],
-      "formatScore": number (0-100)
-    },
-    "jobMatch": {
-      "score": number (0-100),
-      "matchingSkills": [array of matching skills],
-      "missingSkills": [array of missing skills],
-      "recommendations": [array of suggestions to improve match],
-      "relevance": number (0-100)
-    },
-    "structure": {
-      "completeness": number (0-100),
-      "sectionsPresent": [array of present sections],
-      "sectionsMissing": [array of missing sections],
-      "suggestions": [array of structure improvement suggestions],
-      "readability": number (0-100)
-    },
-    "detailedFeedback": {
-      "overallScore": number (0-100),
-      "summary": "short summary of resume quality",
-      "strengths": [array of strengths],
-      "weaknesses": [array of weaknesses],
-      "actionItems": [array of specific action items],
-      "improvementPlan": "short improvement strategy"
-    }
-  }`;
-
-    const completion = await this.groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "llama-3.1-8b-instant",
-      temperature: 0.3,
+    const finalJson = JSON.parse(
+      completion.choices[0]?.message?.content || "{}"
+    );
+    logger.info({
+      message: "✅ Groq RAG Output for getCareerPath",
+      data: finalJson,
     });
-
-    const rawContent = completion.choices[0]?.message?.content || "";
-    const cleaned = rawContent.replace(/```(json)?/g, "").trim();
-
-    try {
-      return JSON.parse(cleaned);
-    } catch (error) {
-      console.error("Failed to parse:", cleaned);
-      throw new Error("Invalid JSON format from AI.");
-    }
+    return finalJson;
   }
 }
